@@ -49,7 +49,7 @@ class VAC:
         """
         with open('Employers.json', 'r', encoding="utf-8") as file:
             f = json.load(file)
-            return f
+            return f["items"]
 
     @staticmethod
     def get_open_vacancies():
@@ -57,22 +57,27 @@ class VAC:
         Функция для подключения к api.hh.ru и получения данных о вакансиях от работодателей
         """
         data = VAC.open_emp()
-        for index, item in enumerate(data['items']):
+        for index, item in enumerate(data):
             employer_id = item['id']
+            response = requests.get(f"https://api.hh.ru/vacancies/?employer_id={employer_id}").json()
+            items = response.get("items", [])
 
-            while index < 10:
-                response = requests.get(f"https://api.hh.ru/vacancies/?employer_id={employer_id}").json()
-                items = response.get("items", [])
+            if not items:
+                break
 
-                if not items:
-                    break
+            for item in items:
+                salary_from = item['salary']["from"] if isinstance(item['salary'], dict) and\
+                    item['salary']["from"] is not None else 0
+                salary_to = item['salary']["to"] if isinstance(item['salary'], dict) and\
+                    item['salary']["to"] is not None else 0
+                salary_cur = (salary_from + salary_to)/2 if isinstance(item['salary'], dict) and\
+                    salary_from or salary_to != 0\
+                    else salary_from if salary_from != 0 else salary_to
 
-                for item in items:
-                    info = dict(id_emp=employer_id, id=item['id'], name=item['name'],
-                                url=item['alternate_url'], salary_from=item['salary']['from'],
-                                salary_to=item['salary']['to'], currency=item['salary']['currency'])
+                info = dict(id_emp=item['employer']['id'], id=item['id'], name=item['name'],
+                            url=item['alternate_url'], salary=int(salary_cur))
+                VAC.Llist.append(info)
 
-                    VAC.Llist.append(info)
         return VAC.Llist
 
     @staticmethod
@@ -84,6 +89,8 @@ class VAC:
             item = VAC.Llist
         with open(f'Vacancies.json', 'w', encoding="utf-8") as file:
             json.dump({"items": item}, file, ensure_ascii=False, indent=2)
+
+
 
 
 
