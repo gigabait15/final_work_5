@@ -2,29 +2,19 @@ import json
 import os
 import psycopg2
 from REQUEST_CLASS import Emp, VAC
+import config
 
 
 class POSTGRES:
     script_file = 'queries.sql'
     json_file_emp = 'Employers.json'
     json_file_vac = 'Vacancies.json'
-
-    @staticmethod
-    def config():
-        """Возвращает параметры подключения к PostgresSQL"""
-        return {
-            'user': 'postgres',
-            'password': '1703',
-            'host': 'localhost',
-            'port': '5432',
-        }
-
+    params = config
 
     @staticmethod
     def create_database() -> None:
         """Создает новую базу данных."""
-        params = POSTGRES.config()
-        with psycopg2.connect(**params) as conn:
+        with psycopg2.connect(POSTGRES.params) as conn:
             conn.autocommit = True
 
             with conn.cursor() as cursor:
@@ -34,8 +24,7 @@ class POSTGRES:
     @staticmethod
     def add_info():
         """Создание таблиц """
-        params = POSTGRES.config()
-        with psycopg2.connect(**params, database="hh_emp") as conn:
+        with psycopg2.connect(POSTGRES.params, database="hh_emp") as conn:
             conn.autocommit = True
             with conn.cursor() as cursor:
                 with open(POSTGRES.script_file, 'r') as file:
@@ -54,8 +43,7 @@ class POSTGRES:
             Emp.get_info_employers()
             Emp.json_dump()
         else:
-            params = POSTGRES.config()
-            with psycopg2.connect(**params, database="hh_emp") as conn:
+            with psycopg2.connect(POSTGRES.params, database="hh_emp") as conn:
                 conn.autocommit = True
                 with conn.cursor() as cursor:
                     with open(POSTGRES.json_file_emp, 'r', encoding='utf-8') as file:
@@ -76,8 +64,7 @@ class POSTGRES:
             VAC.get_open_vacancies()
             VAC.json_dump()
         else:
-            params = POSTGRES.config()
-            with psycopg2.connect(**params, database="hh_emp") as conn:
+            with psycopg2.connect(POSTGRES.params, database="hh_emp") as conn:
                 conn.autocommit = True
                 with conn.cursor() as cursor:
                     with open(POSTGRES.json_file_vac, 'r', encoding='utf-8') as file:
