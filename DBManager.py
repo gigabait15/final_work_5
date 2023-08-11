@@ -1,15 +1,16 @@
 import psycopg2
 from POSTGRES import POSTGRES
+import config
 
 
 class DBManager:
+    params = config
 
     @staticmethod
     def get_companies_and_vacancies_count():
         """Получает список всех компаний и
         количество вакансий у каждой компании."""
-        params = POSTGRES.config()
-        with psycopg2.connect(**params, database="hh_emp") as conn:
+        with psycopg2.connect(DBManager.config(), database="hh_emp") as conn:
             conn.autocommit = True
             with conn.cursor() as cursor:
                 query = """
@@ -18,13 +19,13 @@ class DBManager:
                 cursor.execute(query)
                 for item in cursor.fetchall():
                     print(f"название компании: {item[0]} \nколичество вакансий у компании - {item[1]}\n")
+        conn.close()
 
     @staticmethod
     def get_all_vacancies():
         """Получает список всех вакансий с указанием названия компании,
          названия вакансии и зарплаты и ссылки на вакансию."""
-        params = POSTGRES.config()
-        with psycopg2.connect(**params, database="hh_emp") as conn:
+        with psycopg2.connect(DBManager.config(), database="hh_emp") as conn:
             conn.autocommit = True
             with conn.cursor() as cursor:
                 query = """
@@ -36,12 +37,12 @@ class DBManager:
                 for item in cursor.fetchall():
                     print(f"Название компании : {item[0]}\nНазвание вакансии : {item[1]}\n"
                           f"Заработная плата - {item[2]} руб.\nссылка на вакансию :{item[3]}\n")
+        conn.close()
 
     @staticmethod
     def get_avg_salary():
         """Получает среднюю зарплату по вакансиям."""
-        params = POSTGRES.config()
-        with psycopg2.connect(**params, database="hh_emp") as conn:
+        with psycopg2.connect(DBManager.config(), database="hh_emp") as conn:
             conn.autocommit = True
             with conn.cursor() as cursor:
                 query = """
@@ -51,13 +52,13 @@ class DBManager:
                 result = cursor.fetchone()
                 average_salary = int(result[0])
                 print(f"Средняя зарплата: {average_salary} руб.")
+        conn.close()
 
     @staticmethod
     def get_vacancies_with_higher_salary():
         """Получает список всех вакансий,
         у которых зарплата выше средней по всем вакансиям."""
-        params = POSTGRES.config()
-        with psycopg2.connect(**params, database="hh_emp") as conn:
+        with psycopg2.connect(DBManager.config(), database="hh_emp") as conn:
             conn.autocommit = True
             with conn.cursor() as cursor:
                 subquery = """
@@ -78,6 +79,7 @@ class DBManager:
                 print(f"Список вакансий у которых зарплата выше {average_salary} руб.\n")
                 for item in results:
                     print(f"Название вакансии: {item[1]}\nЗарплата- {item[3]}руб.\nссылка на вакансию: {item[2]}\n")
+        conn.close()
 
     @staticmethod
     def get_vacancies_with_keyword():
@@ -85,23 +87,21 @@ class DBManager:
         в названии которых содержатся переданные в метод слова, например “python”. """
         user_input = input("Введите название вакансии:")
         print()
-        params = POSTGRES.config()
-        with psycopg2.connect(**params, database="hh_emp") as conn:
+
+        with psycopg2.connect(DBManager.config(), database="hh_emp") as conn:
             conn.autocommit = True
             with conn.cursor() as cursor:
-                params = POSTGRES.config()
-                with psycopg2.connect(**params, database="hh_emp") as conn:
-                    conn.autocommit = True
-                    with conn.cursor() as cursor:
-                        query = """
+                query = """
                                     SELECT vac_id, name_vac, url, salary
                                     FROM vacancies
                                     WHERE name_vac LIKE %s
                                     """
-                        search_keyword = f"%{user_input}%"
-                        cursor.execute(query, (search_keyword,))
-                        results = cursor.fetchall()
-                        print(f"Все вакансии по запросу - {user_input}\n")
-                        for item in results:
-                            print(f"Название вакансии: {item[1]}\nСсылка на вакансию: "
-                                  f"{item[2]}\nЗарплата- {item[3]}руб.\n")
+                search_keyword = f"%{user_input}%"
+                cursor.execute(query, (search_keyword,))
+                results = cursor.fetchall()
+                print(f"Все вакансии по запросу - {user_input}\n")
+                for item in results:
+                    print(f"Название вакансии: {item[1]}\nСсылка на вакансию: "
+                          f"{item[2]}\nЗарплата- {item[3]}руб.\n")
+
+        conn.close()
